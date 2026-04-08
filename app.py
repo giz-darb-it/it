@@ -2,13 +2,12 @@ import streamlit as st
 import pandas as pd
 import os
 from datetime import datetime
+import io
 
-# --- إعدادات الحماية ---
-ADMIN_USER = "admin"      # اسم المستخدم لوحة الدعم
-ADMIN_PASSWORD = "123123"    # كلمة المرور لوحة الدعم
-
-# إعداد ملف البيانات
+# --- الإعدادات وقاعدة البيانات (نفس الكود السابق) ---
 DB_FILE = "tickets_db.csv"
+ADMIN_USER = "admin"
+ADMIN_PASSWORD = "123123"
 
 def load_data():
     if os.path.exists(DB_FILE):
@@ -19,15 +18,20 @@ def load_data():
 def save_data(df):
     df.to_csv(DB_FILE, index=False)
 
-st.set_page_config(page_title="نظام الدعم الفني", layout="wide")
-st.title("🎫 نظام الدعم الفني الذكي")
+# دالة تحويل البيانات إلى Excel
+def to_excel(df):
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Sheet1')
+    return output.getvalue()
 
+st.set_page_config(page_title="نظام الدعم الفني", layout="wide")
+df = load_data()
+
+# --- القائمة الجانبية ---
 menu = ["إرسال طلب جديد", "لوحة تحكم الدعم الفني"]
 choice = st.sidebar.selectbox("اختر الواجهة", menu)
 
-df = load_data()
-
-# --- 1. واجهة الموظف (بدون باسورد) ---
 if choice == "إرسال طلب جديد":
     st.header("📝 تقديم طلب دعم")
     with st.form("ticket_form"):
@@ -36,62 +40,68 @@ if choice == "إرسال طلب جديد":
         issue = st.text_area("القسم")
         issue = st.text_area("وصف المشكلة")
         submit = st.form_submit_button("إرسال الطلب")
+        if submit and name and issue:
+            new_id = len(df) + 1001
+            new_row = {"ID": new_id, "Name": name, "Department": dept, "Issue": issue, "Status": "جديد", "Reply": "لا يوجد رد", "Date": datetime.now().strftime("%Y-%m-%d %H:%M")}
+            df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+            save_data(df)
+            st.success(f"تم الإرسال بنجاح! رقم الطلب: {new_id}")
 
-        if submit:
-            if name and issue:
-                new_id = len(df) + 1001
-                new_row = {
-                    "ID": new_id, "Name": name, "Department": dept, 
-                    "Issue": issue, "Status": "جديد", 
-                    "Reply": "لا يوجد رد بعد", "Date": datetime.now().strftime("%Y-%m-%d %H:%M")
-                }
-                df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-                save_data(df)
-                st.success(f"تم إرسال طلبك! رقم الطلب: {new_id}")
-            else:
-                st.error("يرجى تعبئة جميع الحقول.")
-
-# --- 2. واجهة الدعم الفني (تحتاج يوزر وباسورد) ---
 else:
-    st.header("🛠️ تسجيل دخول فريق الدعم")
-    
-    # نموذج تسجيل الدخول
-    with st.sidebar.expander("قفل الأمان", expanded=True):
-        user = st.text_input("اسم المستخدم")
-        passwd = st.text_input("كلمة المرور", type="password")
-    
-    if user == ADMIN_USER and passwd == ADMIN_PASSWORD:
-        st.success("تم تسجيل الدخول بنجاح ✅")
-        
-        if df.empty:
-            st.info("لا توجد طلبات حالياً.")
-        else:
-            st.subheader("الطلبات الواردة")
-            st.dataframe(df, use_container_width=True)
+    st.header("🛠️ لوحة تحكم الإدارة")
+    user = st.sidebar.text_input("اسم المستخدم")
+    passwd = st.sidebar.text_input("كلمة المرور", type="password")
 
-            st.divider()
-            st.subheader("الرد على الطلبات")
+    if user == ADMIN_USER and passwd == ADMIN_PASSWORD:
+        st.success("مرحباً بك في لوحة التحكم")
+
+        # --- أزرار التحميل والتصدير ---
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # تحميل Excel
+            excel_data = to_excel(df)
+            st.download_button(
+                label="📥 تحميل قائمة الطلبات (Excel)",
+                data=excel_data,
+                file_name=f"Technical_Support_{datetime.now().strftime('%Y-%m-%d_%H-%M')}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+
+        with col2:
+            # خيار طباعة PDF (طريقة بسيطة تعتمد على متصفح المستخدم)
+            if st.button("🖨️ تجهيز ملف للطباعة / PDF"):
+                st.info("نصيحة: بعد ظهور الجدول، اضغط Ctrl + P واختر حفظ كـ PDF")
+                st.table(df) # عرض الجدول بشكل ثابت يسهل طباعته
+
+        st.divider()
+
+        # --- عرض القائمة مع إمكانية البحث ---
+        st.subheader("🔍 قائمة الطلبات الواردة")
+        search = st.text_input("ابحث عن موظف أو قسم...")
+        if search:
+            display_df = df[df.apply(lambda row: search.lower() in row.astype(str).str.lower().values, axis=1)]
+        else:
+            display_df = df
+
+        st.dataframe(display_df, use_container_width=True)
+
+        st.divider()
+
+        # --- نظام الرد (نفس السابق) ---
+        pending_ids = df[df['Status'] != "تم الحل"]['ID'].tolist()
+        if pending_ids:
+            st.subheader("✍️ الرد على الطلبات المعلقة")
+            selected_id = st.selectbox("رقم الطلب", pending_ids)
+            reply_text = st.text_area("الرد الفني")
+            new_status = st.selectbox("الحالة", ["قيد المعالجة", "تم الحل"])
             
-            # فلترة الطلبات التي لم تحل بعد
-            pending_tickets = df[df['Status'] != "تم الحل"]['ID'].tolist()
-            
-            if pending_tickets:
-                selected_id = st.selectbox("اختر رقم الطلب للرد عليه", pending_tickets)
-                reply_text = st.text_area("اكتب الرد الفني هنا")
-                new_status = st.selectbox("تحديث الحالة", ["قيد المعالجة", "تم الحل"])
-                
-                if st.button("تحديث وحفظ"):
-                    idx = df[df['ID'] == selected_id].index[0]
-                    df.at[idx, 'Reply'] = reply_text
-                    df.at[idx, 'Status'] = new_status
-                    save_data(df)
-                    st.success(f"تم تحديث الطلب {selected_id}")
-                    st.rerun()
-            else:
-                st.balloons()
-                st.success("عمل رائع! تم إنجاز جميع المهام.")
-    
-    elif user != "" or passwd != "":
-        st.error("اسم المستخدم أو كلمة المرور غير صحيحة ❌")
+            if st.button("تحديث"):
+                idx = df[df['ID'] == selected_id].index[0]
+                df.at[idx, 'Reply'] = reply_text
+                df.at[idx, 'Status'] = new_status
+                save_data(df)
+                st.success("تم التحديث!")
+                st.rerun()
     else:
-        st.warning("يرجى إدخال بيانات الدخول في القائمة الجانبية للوصول للوحة التحكم.")
+        st.warning("يرجى إدخال بيانات الإدارة")
