@@ -10,10 +10,13 @@ ADMIN_USER = "admin"
 ADMIN_PASSWORD = "123123"
 
 # بيانات Twilio - استبدلها ببياناتك من موقع Twilio Console
-TWILIO_ACCOUNT_SID = 'ACxxxxxxxxxxxxxxxxxxxxxxxx' 
-TWILIO_AUTH_TOKEN = 'your_auth_token_here'
+# بدلاً من كتابة القيم مباشرة، نستخدم st.secrets
+TWILIO_ACCOUNT_SID = st.secrets["TWILIO_ACCOUNT_SID"]
+TWILIO_AUTH_TOKEN = st.secrets["TWILIO_AUTH_TOKEN"]
+
+# هذه القيم يمكن تركها كما هي أو وضعها في الأسرار أيضاً
 TWILIO_WHATSAPP_FROM = 'whatsapp:+14155238886' 
-YOUR_WHATSAPP_NUMBER = 'whatsapp:+9665XXXXXXXX' 
+YOUR_WHATSAPP_NUMBER = 'whatsapp:+9665XXXXXXXX'
 
 DB_FILE = "tickets_db.csv"
 
