@@ -67,20 +67,36 @@ t = {
     }
 }
 
-# --- 3. التنسيق (CSS) ---
+# --- 3. التنسيق (CSS المحسن لإخفاء المقبض نهائياً) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@700;900&display=swap');
-    html, body, [data-testid="stAppViewContainer"] {{ font-family: 'Tajawal', sans-serif; direction: {t[lang]['dir']}; }}
+    
+    html, body, [data-testid="stAppViewContainer"] {{ 
+        font-family: 'Tajawal', sans-serif; 
+        direction: {t[lang]['dir']}; 
+    }}
+    
     h1 {{ font-size: 3rem !important; font-weight: 900 !important; color: #4361ee !important; text-align: center; }}
     label, p {{ font-size: 1.4rem !important; font-weight: 700 !important; }}
     .stButton>button {{ font-size: 1.3rem !important; font-weight: 800 !important; border-radius: 10px !important; }}
     
-    /* إخفاء خيار تغيير الحجم (المستطيل الصغير) أسفل مربعات النص */
+    /* منع تغيير الحجم وإخفاء المستطيل الصغير نهائياً لكافة المتصفحات */
     textarea {{
         resize: none !important;
     }}
     
+    /* استهداف محدد لعنصر Streamlit الذي يحتوي على المقبض */
+    [data-testid="stTextArea"] textarea {{
+        resize: none !important;
+    }}
+    
+    /* إخفاء أيقونة التكبير في الزاوية يدوياً لبعض المتصفحات */
+    textarea::-webkit-resizer {{
+        display: none !important;
+        background: transparent !important;
+    }}
+
     [data-testid="stSidebar"] {{ display: none; }}
     </style>
     """, unsafe_allow_html=True)
@@ -99,6 +115,7 @@ with tab_user:
         empid = c1.text_input(t[lang]["empid"])
         email = c2.text_input(t[lang]["email"])
         dept = c2.text_input(t[lang]["dept"])
+        # تحديد الارتفاع لمنع الحاجة للتكبير اليدوي
         issue_desc = st.text_area(t[lang]["desc"], height=150) 
         if st.form_submit_button(t[lang]["submit"]):
             if name and empid and issue_desc:
