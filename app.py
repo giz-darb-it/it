@@ -127,11 +127,7 @@ with tab_admin:
         c_excel.write("##")
         c_excel.download_button("📤 Excel", data=to_excel(df), file_name="tickets.xlsx", use_container_width=True)
         
-        # فلترة وعرض الجدول (وصف المشكلة سيظهر هنا)
-        display_df = df[df.apply(lambda row: search.lower() in row.astype(str).str.lower().values, axis=1)] if search else df
-        st.dataframe(display_df, use_container_width=True)
-
-        st.markdown("---")
+        
         
         # قسم الرد وقسم الحذف
         all_ids = df['ID'].tolist()
