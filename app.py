@@ -42,52 +42,80 @@ t = {
         "submit": "إرسال الطلب",
         "admin_tab": "لوحة الإدارة",
         "user_tab": "طلب دعم جديد",
-        "success": "✅ تم إرسال طلبك بنجاح!",
-        "error": "⚠️ يرجى ملء كافة الحقول",
+        "success": "✅ تم إرسال طلبك بنجاح! رقم المتابعة: ",
+        "error": "⚠️ يرجى ملء كافة الحقول الأساسية",
         "login": "🔐 تسجيل دخول المشرف",
-        "search": "🔍 بحث...",
-        "delete_one": "🗑️ حذف طلب محدد",
-        "delete_all": "🚨 حذف جميع الطلبات",
-        "confirm_del": "هل أنت متأكد من الحذف؟",
+        "user_field": "اسم المستخدم",
+        "pass_field": "كلمة المرور",
+        "stats_total": "إجمالي الطلبات",
+        "stats_pending": "تحت المعالجة",
+        "stats_done": "تم الحل",
+        "search": "🔍 بحث في الطلبات...",
+        "reply_btn": "تحديث الحالة والرد",
+        "delete_section": "🗑️ إدارة وحذف البيانات",
+        "del_btn": "حذف الطلب المختار",
+        "del_all_btn": "🗑️ حذف كافة البيانات (تحديد الكل)",
+        "confirm_all": "أؤكد رغبتي في مسح جميع البيانات نهائياً",
         "dir": "rtl", "align": "right"
     },
     "English": {
         "title": "Technical Support Request",
-        "subtitle": "Please fill out the form below",
+        "subtitle": "Please fill out the form below and we will respond shortly",
         "name": "👤 Full Name",
         "empid": "🆔 Employee ID",
         "email": "📧 Email Address",
-        "dept": "🏢 Department",
+        "dept": "🏢 Department (Type here)",
         "type": "⚠️ Issue Type",
-        "desc": "📝 Description",
+        "desc": "📝 Detailed Issue Description",
         "submit": "Submit Request",
         "admin_tab": "Admin Dashboard",
         "user_tab": "New Ticket",
-        "success": "✅ Submitted successfully!",
-        "error": "⚠️ Please fill all fields",
+        "success": "✅ Submitted successfully! Ticket ID: ",
+        "error": "⚠️ Please fill all required fields",
         "login": "🔐 Admin Login",
-        "search": "🔍 Search...",
-        "delete_one": "🗑️ Delete Specific Ticket",
-        "delete_all": "🚨 Delete All Tickets",
-        "confirm_del": "Are you sure you want to delete?",
+        "user_field": "Username",
+        "pass_field": "Password",
+        "stats_total": "Total Tickets",
+        "stats_pending": "Pending",
+        "stats_done": "Resolved",
+        "search": "🔍 Search Tickets...",
+        "reply_btn": "Update & Reply",
+        "delete_section": "🗑️ Data Management & Deletion",
+        "del_btn": "Delete Selected Ticket",
+        "del_all_btn": "🗑️ Delete All Data (Select All)",
+        "confirm_all": "I confirm that I want to permanently delete all data",
         "dir": "ltr", "align": "left"
     }
 }
 
-# --- 3. تصميم الواجهة ---
+# --- 3. تصميم الواجهة (CSS) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
-    html, body, [class*="css"] {{ font-family: 'Tajawal', sans-serif; direction: {t[lang]['dir']}; text-align: {t[lang]['align']}; }}
-    .stButton>button {{ width: 100%; border-radius: 10px; background-color: #4361ee; color: white; }}
-    .btn-danger>button {{ background-color: #e63946 !important; }}
+    html, body, [class*="css"] {{
+        font-family: 'Tajawal', sans-serif;
+        direction: {t[lang]['dir']};
+        text-align: {t[lang]['align']};
+    }}
+    .stButton>button {{
+        width: 100%;
+        border-radius: 10px;
+        background-color: #4361ee;
+        color: white;
+        font-weight: bold;
+    }}
+    /* زر الحذف بلون أحمر */
+    div[data-testid="stButton"] button:contains("حذف"), 
+    div[data-testid="stButton"] button:contains("Delete") {{
+        background-color: #ef233c;
+    }}
     </style>
     """, unsafe_allow_html=True)
 
 df = load_data()
 
 # --- 4. القائمة الجانبية ---
-choice = st.sidebar.radio("Menu", [t[lang]["user_tab"], t[lang]["admin_tab"]])
+choice = st.sidebar.radio(f"{'Menu' if lang=='English' else 'القائمة'}", [t[lang]["user_tab"], t[lang]["admin_tab"]])
 
 # --- 5. واجهة المستخدم ---
 if choice == t[lang]["user_tab"]:
@@ -101,50 +129,78 @@ if choice == t[lang]["user_tab"]:
             issue_type = st.selectbox(t[lang]["type"], ["Hardware", "Software", "Network", "Other"] if lang=="English" else ["أجهزة", "أنظمة", "شبكات", "أخرى"])
         issue_desc = st.text_area(t[lang]["desc"])
         if st.form_submit_button(t[lang]["submit"]):
-            if name and empid and dept:
-                new_row = {"ID": len(df)+1001, "Name": name, "EmpID": empid, "Email": email, "Department": dept, "IssueType": issue_type, "IssueDesc": issue_desc, "Status": "New" if lang=="English" else "جديد", "Reply": "No reply", "Date": datetime.now().strftime("%Y-%m-%d %H:%M")}
+            if name and empid and dept and issue_desc:
+                new_id = len(df) + 1001
+                new_row = {"ID": new_id, "Name": name, "EmpID": empid, "Email": email, "Department": dept, "IssueType": issue_type, "IssueDesc": issue_desc, "Status": "New" if lang=="English" else "جديد", "Reply": "No reply", "Date": datetime.now().strftime("%Y-%m-%d %H:%M")}
                 df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
                 save_data(df)
-                st.success(t[lang]["success"])
+                st.success(f"{t[lang]['success']} {new_id}")
             else: st.error(t[lang]["error"])
 
-# --- 6. واجهة الإدارة (مع ميزة الحذف) ---
+# --- 6. واجهة الإدارة ---
 else:
     st.markdown(f"<h1 style='text-align: center;'>{t[lang]['admin_tab']}</h1>", unsafe_allow_html=True)
     with st.sidebar.expander(t[lang]["login"]):
-        admin_user, admin_pass = st.text_input("User"), st.text_input("Pass", type="password")
+        admin_user, admin_pass = st.text_input(t[lang]["user_field"]), st.text_input(t[lang]["pass_field"], type="password")
 
     if admin_user == ADMIN_USER and admin_pass == ADMIN_PASSWORD:
-        st.dataframe(df, use_container_width=True)
-
+        # إحصائيات
+        c1, c2, c3 = st.columns(3)
+        c1.metric(t[lang]["stats_total"], len(df))
+        c2.metric(t[lang]["stats_pending"], len(df[df['Status'].isin(["New", "جديد", "Pending", "قيد المعالجة"])]))
+        c3.metric(t[lang]["stats_done"], len(df[df['Status'].isin(["Resolved", "تم الحل"])]))
+        
         st.divider()
-        st.subheader("🗑️ " + ("Data Management" if lang=="English" else "إدارة وحذف البيانات"))
-        
-        col_del1, col_del2 = st.columns(2)
-        
-        with col_del1:
-            # حذف طلب واحد عن طريق ID
-            st.markdown(f"**{t[lang]['delete_one']}**")
-            ticket_to_del = st.selectbox("Select ID", df['ID'].tolist() if not df.empty else [None])
-            if st.button("🗑️ " + ("Delete Selected" if lang=="English" else "حذف الطلب المختار"), key="del_one"):
-                if ticket_to_del:
-                    df = df[df['ID'] != ticket_to_del]
+        col_search, col_export = st.columns([3, 1])
+        with col_search: search = st.text_input(t[lang]["search"])
+        with col_export: 
+            st.write(" ")
+            st.download_button("📥 Excel", data=to_excel(df), file_name="tickets.xlsx")
+
+        display_df = df[df.apply(lambda row: search.lower() in row.astype(str).str.lower().values, axis=1)] if search else df
+        st.dataframe(display_df, use_container_width=True)
+
+        # --- قسم الرد والحذف الجديد ---
+        st.markdown("---")
+        col_action, col_delete = st.columns(2)
+
+        with col_action:
+            st.subheader(f"{'Process Ticket' if lang=='English' else 'معالجة الطلبات'}")
+            all_ids = df['ID'].tolist()
+            if all_ids:
+                selected_id = st.selectbox("Ticket ID", all_ids, key="process_id")
+                reply_text = st.text_area(f"{'Official Reply' if lang=='English' else 'الرد الرسمي'}")
+                status_options = ["Resolved", "Pending"] if lang == "English" else ["تم الحل", "قيد المعالجة"]
+                new_status = st.selectbox(t[lang]["type"], status_options, key="status_select")
+                if st.button(t[lang]["reply_btn"]):
+                    idx = df[df['ID'] == selected_id].index[0]
+                    df.at[idx, 'Reply'], df.at[idx, 'Status'] = reply_text, new_status
                     save_data(df)
-                    st.warning(f"Ticket {ticket_to_del} Deleted!")
+                    st.success("Updated!")
                     st.rerun()
 
-        with col_del2:
-            # حذف الكل (تحديد الكل)
-            st.markdown(f"**{t[lang]['delete_all']}**")
-            confirm = st.checkbox(t[lang]["confirm_del"])
-            if st.button("🔥 " + ("Clear All Data" if lang=="English" else "مسح كافة البيانات"), key="del_all"):
-                if confirm:
+        with col_delete:
+            st.subheader(t[lang]["delete_section"])
+            # 1. حذف طلب واحد
+            del_id = st.selectbox(t[lang]["del_btn"], [None] + all_ids, key="del_id")
+            if st.button(t[lang]["del_btn"]):
+                if del_id:
+                    df = df[df['ID'] != del_id]
+                    save_data(df)
+                    st.warning(f"Ticket {del_id} Deleted!")
+                    st.rerun()
+            
+            st.divider()
+            # 2. حذف الكل (تحديد الكل)
+            st.markdown(f"⚠️ **{t[lang]['del_all_btn']}**")
+            confirm_del = st.checkbox(t[lang]["confirm_all"])
+            if st.button(t[lang]["del_all_btn"]):
+                if confirm_del:
                     df = pd.DataFrame(columns=df.columns)
                     save_data(df)
-                    st.success("All Data Cleared!")
+                    st.success("All data wiped!")
                     st.rerun()
                 else:
-                    st.error("Please confirm first / يرجى التأكيد أولاً")
-                    
+                    st.error("Please confirm check-box first!")
     else:
-        st.warning("Please login / يرجى تسجيل الدخول")
+        st.warning("Please login from sidebar")
