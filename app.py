@@ -26,25 +26,23 @@ def to_excel(df):
 # --- 2. إعدادات الصفحة ---
 st.set_page_config(page_title="Support System", layout="centered")
 
-# --- 3. نظام أزرار تغيير اللغة (ضغط مباشر) ---
+# --- 3. نظام اختيار اللغة في الأعلى ---
 if 'lang' not in st.session_state:
     st.session_state.lang = 'AR'
 
-st.sidebar.markdown("### 🌐 Language / اللغة")
-col_ar, col_en = st.sidebar.columns(2)
-
-# أزرار الضغط المباشر لتغيير اللغة
-if col_ar.button("AR", use_container_width=True):
-    st.session_state.lang = 'AR'
-    st.rerun()
-
-if col_en.button("EN", use_container_width=True):
-    st.session_state.lang = 'EN'
-    st.rerun()
+# حاوية علوية لأزرار اللغة
+lang_col1, lang_col2, lang_col3 = st.columns([4, 1, 1])
+with lang_col2:
+    if st.button("AR", use_container_width=True, key="btn_ar"):
+        st.session_state.lang = 'AR'
+        st.rerun()
+with lang_col3:
+    if st.button("EN", use_container_width=True, key="btn_en"):
+        st.session_state.lang = 'EN'
+        st.rerun()
 
 L = st.session_state.lang
 
-# نصوص الواجهة (تم تصحيح الفواصل هنا)
 t = {
     'AR': {
         'title': "نظام الدعم الفني",
@@ -82,7 +80,10 @@ t = {
     }
 }
 
-# --- 4. CSS لتحسين مظهر الجوال والواجهة ---
+# --- 4. القائمة العلوية للتنقل (Tabs) ---
+tab_user, tab_admin = st.tabs([t[L]["user_tab"], t[L]["admin_tab"]])
+
+# --- 5. CSS المحدث للواجهة العلوية ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
@@ -93,54 +94,48 @@ st.markdown(f"""
         background-color: #f8f9fa;
     }}
 
-    /* تصميم النموذج كبطاقة مرنة للجوال */
+    /* تصميم أزرار التبويبات العلوية */
+    button[data-baseweb="tab"] {{
+        font-size: 1.1rem !important;
+        font-weight: bold !important;
+    }}
+
     [data-testid="stForm"] {{
         background-color: white;
         padding: 1.5rem;
         border-radius: 15px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         border: none;
+        margin-top: 10px;
     }}
 
-    /* تحسين شكل الأزرار لتكون قابلة للمس بسهولة */
     .stButton>button {{
         border-radius: 10px !important;
-        height: 3.2em !important;
+        height: 3em !important;
         font-weight: bold !important;
-        background: linear-gradient(90deg, #4361ee, #3a0ca3) !important;
-        color: white !important;
-        border: none !important;
     }}
 
-    /* محاذاة النص داخل الحقول */
     input, textarea, [data-baseweb="select"] {{
         text-align: {t[L]['align']} !important;
     }}
     
-    /* استجابة الجوال */
-    @media (max-width: 640px) {{
-        [data-testid="stForm"] {{ padding: 1rem; }}
-        h1 {{ font-size: 1.6rem !important; }}
+    /* إخفاء القائمة الجانبية تماماً إذا لم نعد نحتاجها */
+    [data-testid="stSidebar"] {{
+        display: none;
     }}
     </style>
     """, unsafe_allow_html=True)
 
 df = load_data()
 
-# --- 5. القائمة الجانبية للتنقل ---
-st.sidebar.divider()
-choice = st.sidebar.radio(
-    "Menu" if L == 'EN' else "القائمة",
-    [t[L]["user_tab"], t[L]["admin_tab"]]
-)
+# --- 6. محتوى الصفحات بناءً على التبويب المختار ---
 
-# --- 6. واجهة المستخدم (تقديم الطلب) ---
-if choice == t[L]["user_tab"]:
-    st.markdown(f"<h1 style='text-align: center; color: #1e3a8a;'>{t[L]['title']}</h1>", unsafe_allow_html=True)
+# الصفحة الأولى: واجهة المستخدم
+with tab_user:
+    st.markdown(f"<h1 style='text-align: center; color: #1e3a8a; margin-top:20px;'>{t[L]['title']}</h1>", unsafe_allow_html=True)
     st.markdown(f"<p style='text-align: center; color: #6c757d;'>{t[L]['sub']}</p>", unsafe_allow_html=True)
     
     with st.form("main_form", clear_on_submit=True):
-        # تقسيم الحقول (تتحول لعمود واحد تلقائياً في الجوال)
         c1, c2 = st.columns(2)
         with c1:
             name = st.text_input(t[L]["name"])
@@ -167,14 +162,19 @@ if choice == t[L]["user_tab"]:
             else:
                 st.error(t[L]["error"])
 
-# --- 7. واجهة الإدارة ---
-else:
-    st.markdown(f"<h2 style='text-align: center;'>{t[L]['admin_tab']}</h2>", unsafe_allow_html=True)
-    with st.sidebar.expander("🔐 Admin"):
-        admin_user = st.text_input("User")
-        admin_pass = st.text_input("Pass", type="password")
+# الصفحة الثانية: واجهة الإدارة
+with tab_admin:
+    st.markdown(f"<h2 style='text-align: center; margin-top:20px;'>{t[L]['admin_tab']}</h2>", unsafe_allow_html=True)
+    
+    # نموذج تسجيل دخول بسيط في الأعلى
+    login_col1, login_col2 = st.columns(2)
+    with login_col1:
+        admin_user = st.text_input("User", key="admin_user_top")
+    with login_col2:
+        admin_pass = st.text_input("Pass", type="password", key="admin_pass_top")
 
     if admin_user == ADMIN_USER and admin_pass == ADMIN_PASSWORD:
+        st.divider()
         st.dataframe(df, use_container_width=True)
         st.download_button("📥 Excel", data=to_excel(df), file_name="tickets.xlsx", use_container_width=True)
     else:
