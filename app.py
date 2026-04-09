@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 import io
 
-# محاولة استيراد مكتبة التحديث التلقائي لتجنب توقف التطبيق إذا لم تكن مثبتة
+# محاولة استيراد مكتبة التحديث التلقائي
 try:
     from streamlit_autorefresh import st_autorefresh
 except ImportError:
@@ -32,108 +32,68 @@ def to_excel(df):
 # --- 2. إعدادات الصفحة ---
 st.set_page_config(page_title="Support System", layout="wide")
 
+# تهيئة حالة اللغة إذا لم تكن موجودة
 if 'lang_choice' not in st.session_state:
     st.session_state.lang_choice = "العربية"
 
-# شريط علوي لاختيار اللغة
-l_col1, l_col2 = st.columns([10, 1.5])
-with l_col2:
-    current_lang = st.selectbox("🌐 Language", ["العربية", "English"], label_visibility="collapsed")
-    if current_lang != st.session_state.lang_choice:
-        st.session_state.lang_choice = current_lang
+# --- تبديل اللغة باستخدام الأزرار EN | AR ---
+col_spacer, col_en, col_ar = st.columns([10, 0.8, 0.8])
+
+with col_en:
+    if st.button("EN", use_container_width=True):
+        st.session_state.lang_choice = "English"
+        st.rerun()
+
+with col_ar:
+    if st.button("AR", use_container_width=True):
+        st.session_state.lang_choice = "العربية"
         st.rerun()
 
 lang = st.session_state.lang_choice
 
-# --- 3. قاموس النصوص الشامل (تم إصلاح كافة المفاتيح) ---
+# --- 3. قاموس النصوص ---
 t = {
     "العربية": {
-        "title": "نظام الدعم الفني",
-        "user_tab": "طلب دعم جديد",
-        "admin_tab": "لوحة الإدارة",
-        "name": "👤 الاسم الكامل",
-        "empid": "🆔 الرقم الوظيفي",
-        "email": "📧 البريد الإلكتروني",
-        "dept": "🏢 القسم",
-        "desc": "📝 وصف المشكلة",
-        "submit": "إرسال الطلب",
-        "success": "✅ تم الإرسال بنجاح!",
-        "error": "⚠️ يرجى ملء الحقول المطلوبة",
-        "stats_total": "إجمالي الطلبات",
-        "stats_pending": "تحت المعالجة",
-        "stats_done": "تم الحل",
-        "search": "🔍 بحث...",
-        "login": "🔐 دخول المشرف",
-        "user_field": "اسم المستخدم",
-        "pass_field": "كلمة المرور",
-        "reply_btn": "تحديث الرد والحالة",
-        "delete_section": "⚙️ إدارة البيانات",
-        "del_btn": "حذف الطلب",
-        "del_all_btn": "🗑️ حذف الكل",
-        "confirm_all": "تأكيد المسح النهائي",
-        "dir": "rtl",
-        "align": "right"
+        "title": "نظام الدعم الفني", "user_tab": "طلب دعم جديد", "admin_tab": "لوحة الإدارة",
+        "name": "👤 الاسم الكامل", "empid": "🆔 الرقم الوظيفي", "email": "📧 البريد الإلكتروني",
+        "dept": "🏢 القسم", "desc": "📝 وصف المشكلة", "submit": "إرسال الطلب",
+        "success": "✅ تم الإرسال بنجاح!", "error": "⚠️ يرجى ملء الحقول المطلوبة",
+        "stats_total": "إجمالي الطلبات", "stats_pending": "تحت المعالجة", "stats_done": "تم الحل",
+        "search": "🔍 بحث...", "login": "🔐 دخول المشرف", "user_field": "اسم المستخدم",
+        "pass_field": "كلمة المرور", "reply_btn": "تحديث الرد والحالة", "delete_section": "⚙️ إدارة البيانات",
+        "del_btn": "حذف الطلب", "del_all_btn": "🗑️ حذف الكل", "confirm_all": "تأكيد المسح النهائي",
+        "dir": "rtl", "align": "right"
     },
     "English": {
-        "title": "Technical Support System",
-        "user_tab": "New Ticket",
-        "admin_tab": "Admin Dashboard",
-        "name": "👤 Full Name",
-        "empid": "🆔 Employee ID",
-        "email": "📧 Email Address",
-        "dept": "🏢 Department",
-        "desc": "📝 Issue Description",
-        "submit": "Submit Request",
-        "success": "✅ Submitted successfully!",
-        "error": "⚠️ Please fill required fields",
-        "stats_total": "Total",
-        "stats_pending": "Pending",
-        "stats_done": "Resolved",
-        "search": "🔍 Search...",
-        "login": "🔐 Admin Login",
-        "user_field": "Username",
-        "pass_field": "Password",
-        "reply_btn": "Update Reply & Status",
-        "delete_section": "⚙️ Data Management",
-        "del_btn": "Delete Ticket",
-        "del_all_btn": "🗑️ Delete All",
-        "confirm_all": "Confirm Deletion",
-        "dir": "ltr",
-        "align": "left"
+        "title": "Support System", "user_tab": "New Ticket", "admin_tab": "Dashboard",
+        "name": "👤 Full Name", "empid": "🆔 Employee ID", "email": "📧 Email",
+        "dept": "🏢 Department", "desc": "📝 Description", "submit": "Submit Request",
+        "success": "✅ Submitted successfully!", "error": "⚠️ Fill all fields",
+        "stats_total": "Total", "stats_pending": "Pending", "stats_done": "Resolved",
+        "search": "🔍 Search...", "login": "🔐 Admin Login", "user_field": "Username",
+        "pass_field": "Password", "reply_btn": "Update Reply", "delete_section": "⚙️ Data Management",
+        "del_btn": "Delete Ticket", "del_all_btn": "🗑️ Delete All", "confirm_all": "Confirm Deletion",
+        "dir": "ltr", "align": "left"
     }
 }
 
-# --- 4. التنسيق (خط كبير وعريض جداً) ---
+# --- 4. التنسيق (CSS) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@700;900&display=swap');
+    html, body, [data-testid="stAppViewContainer"] {{ font-family: 'Tajawal', sans-serif; direction: {t[lang]['dir']}; }}
+    h1 {{ font-size: 3.5rem !important; font-weight: 900 !important; color: #4361ee !important; text-align: center; }}
+    h2 {{ font-size: 2.8rem !important; font-weight: 800 !important; text-align: center; }}
+    label, p {{ font-size: 1.6rem !important; font-weight: 700 !important; }}
+    .stButton>button {{ font-size: 1.4rem !important; font-weight: 800 !important; border-radius: 10px !important; }}
     
-    html, body, [data-testid="stAppViewContainer"] {{
-        font-family: 'Tajawal', sans-serif;
-        direction: {t[lang]['dir']};
+    /* تنسيق أزرار اللغة لتكون مميزة */
+    div[data-testid="stColumn"]:nth-child(2) button, div[data-testid="stColumn"]:nth-child(3) button {{
+        background-color: #f0f2f6;
+        color: #1c1c1c;
+        border: 1px solid #d1d5db;
     }}
-
-    /* تكبير الخطوط */
-    h1 {{ font-size: 2.5rem !important; font-weight: 700 !important; color: #4361ee !important; text-align: center; }}
-    h2 {{ font-size: 1.8rem !important; font-weight: 500 !important; text-align: center; }}
     
-    label, p {{ font-size: 1.6rem !important; font-weight: 500 !important; }}
-    
-    input, textarea, [data-baseweb="select"] {{
-        font-size: 1.4rem !important;
-        font-weight: 500 !important;
-    }}
-
-    .stButton>button {{
-        font-size: 1.6rem !important;
-        font-weight: 800 !important;
-        height: 4rem !important;
-        border-radius: 12px !important;
-    }}
-
-    [data-testid="stMetricValue"] {{ font-size: 3.5rem !important; font-weight: 900 !important; }}
-    
-    /* إخفاء الجانبي */
     [data-testid="stSidebar"] {{ display: none; }}
     </style>
     """, unsafe_allow_html=True)
@@ -154,9 +114,7 @@ with tab_user:
         with c2:
             email = st.text_input(t[lang]["email"])
             dept = st.text_input(t[lang]["dept"])
-        
         issue_desc = st.text_area(t[lang]["desc"])
-        
         if st.form_submit_button(t[lang]["submit"]):
             if name and empid and issue_desc:
                 new_id = str(len(df) + 1001)
@@ -164,8 +122,6 @@ with tab_user:
                 df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
                 save_data(df)
                 st.success(f"{t[lang]['success']} ID: {new_id}")
-            else:
-                st.error(t[lang]["error"])
 
 # --- 7. واجهة الإدارة ---
 with tab_admin:
@@ -173,7 +129,6 @@ with tab_admin:
         st_autorefresh(interval=10000, key="auto_refresh_admin")
     
     st.markdown(f"<h2>{t[lang]['admin_tab']}</h2>", unsafe_allow_html=True)
-    
     l1, l2, l3 = st.columns([1, 2, 1])
     with l2:
         with st.expander(t[lang]["login"], expanded=True):
@@ -182,17 +137,15 @@ with tab_admin:
 
     if a_user == ADMIN_USER and a_pass == ADMIN_PASSWORD:
         st.divider()
-        # إحصائيات ضخمة
         m1, m2, m3 = st.columns(3)
         m1.metric(t[lang]["stats_total"], len(df))
         m2.metric(t[lang]["stats_pending"], len(df[df['Status'].isin(["New", "جديد", "Pending", "قيد المعالجة"])]))
         m3.metric(t[lang]["stats_done"], len(df[df['Status'].isin(["Resolved", "تم الحل"])]))
         
         st.divider()
-        search = st.text_input(t[lang]["search"])
         st.dataframe(df, use_container_width=True)
-        st.download_button("📥 Excel", data=to_excel(df), file_name="tickets.xlsx")
-
+        
+        # الرد والحذف
         st.markdown("---")
         col_r, col_d = st.columns(2)
         all_ids = df['ID'].tolist()
@@ -200,28 +153,18 @@ with tab_admin:
         with col_r:
             st.subheader(t[lang]["reply_btn"])
             if all_ids:
-                s_id = st.selectbox("Select ID", all_ids, key="sel_id_reply")
-                r_txt = st.text_area("Reply", key="reply_area_admin")
-                if st.button(t[lang]["reply_btn"], key="upd_action"):
+                s_id = st.selectbox("Select ID", all_ids, key="sel_reply")
+                r_txt = st.text_area("Reply", key="reply_area")
+                if st.button(t[lang]["reply_btn"]):
                     idx = df[df['ID'] == s_id].index[0]
                     df.at[idx, 'Reply'] = r_txt
                     df.at[idx, 'Status'] = "Resolved" if lang=="English" else "تم الحل"
-                    save_data(df)
-                    st.rerun()
+                    save_data(df); st.rerun()
 
         with col_d:
             st.subheader(t[lang]["delete_section"])
-            d_id = st.selectbox(t[lang]["del_btn"], [None] + all_ids, key="sel_id_del")
-            if st.button(t[lang]["del_btn"], key="del_action"):
+            d_id = st.selectbox(t[lang]["del_btn"], [None] + all_ids, key="sel_del")
+            if st.button(t[lang]["del_btn"]):
                 if d_id:
                     df = df[df['ID'] != d_id]
-                    save_data(df)
-                    st.rerun()
-            
-            st.divider()
-            confirm = st.checkbox(t[lang]["confirm_all"])
-            if st.button(t[lang]["del_all_btn"]):
-                if confirm:
-                    df = pd.DataFrame(columns=df.columns)
-                    save_data(df)
-                    st.rerun()
+                    save_data(df); st.rerun()
