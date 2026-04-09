@@ -7,7 +7,7 @@ import io
 # --- 1. الإعدادات وقاعدة البيانات ---
 DB_FILE = "tickets_db.csv"
 ADMIN_USER = "admin"
-ADMIN_PASSWORD = "123123"
+ADMIN_PASSWORD = "Dit@123123"
 
 def load_data():
     if os.path.exists(DB_FILE):
