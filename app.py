@@ -79,7 +79,7 @@ st.markdown(f"""
     label, p {{ font-size: 1.5rem !important; font-weight: 700 !important; }}
     .stButton>button {{ font-size: 1.3rem !important; font-weight: 800 !important; border-radius: 10px !important; }}
     
-    /* إخفاء مقبض التكبير (المستطيل) */
+    /* منع التكبير يدوياً وإخفاء المقبض */
     textarea {{ resize: none !important; }}
     [data-testid="stTextArea"] textarea {{ resize: none !important; }}
     textarea::-webkit-resizer {{ display: none !important; }}
@@ -128,17 +128,21 @@ with tab_admin:
     if st.session_state.logged_in:
         st.markdown(f"### {t[lang]['admin_tab']}")
         
-        # --- قسم الداش بورد (Dashboard) ---
-        total_tix = len(df)
-        new_tix = len(df[df['Status'] == t[lang]["status_options"][0]])
-        proc_tix = len(df[df['Status'] == t[lang]["status_options"][1]])
-        done_tix = len(df[df['Status'] == t[lang]["status_options"][2]])
+        # --- قسم الداش بورد (Dashboard الثابت) ---
+        # نقوم بتجهيز البيانات بغض النظر عن اللغة
+        stats = {
+            "total": len(df),
+            "new": len(df[df['Status'].isin(["جديد", "New"])]),
+            "proc": len(df[df['Status'].isin(["قيد المعالجة", "In Progress"])]),
+            "done": len(df[df['Status'].isin(["تم الحل", "Resolved"])])
+        }
 
+        # نستخدم ترتيباً ثابتاً للأعمدة لا يتأثر باتجاه الصفحة
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric(t[lang]["stats_total"], total_tix)
-        m2.metric(t[lang]["stats_new"], new_tix, delta_color="normal")
-        m3.metric(t[lang]["stats_proc"], proc_tix)
-        m4.metric(t[lang]["stats_done"], done_tix)
+        m1.metric(t[lang]["stats_total"], stats["total"])
+        m2.metric(t[lang]["stats_new"], stats["new"])
+        m3.metric(t[lang]["stats_proc"], stats["proc"])
+        m4.metric(t[lang]["stats_done"], stats["done"])
         st.divider()
         
         # البحث وتصدير إكسل
@@ -152,7 +156,7 @@ with tab_admin:
 
         st.markdown("---")
         
-        # قسم الرد وقسم الحذف
+        # قسم المعالجة والحذف
         all_ids = df['ID'].tolist()
         if all_ids:
             col_manage, col_delete = st.columns([2, 1])
@@ -161,11 +165,11 @@ with tab_admin:
                 st.subheader("⚙️ معالجة الطلب")
                 sel_id = st.selectbox("ID", all_ids, key="sel_process")
                 idx = df[df['ID'] == sel_id].index[0]
-                
-                # عرض وصف المشكلة بوضوح للمسؤول
                 st.info(f"**وصف المشكلة:** {df.at[idx, 'IssueDesc']}")
                 
                 cs1, cs2 = st.columns(2)
+                # التأكد من اختيار الحالة الصحيحة بناءً على اللغة الحالية
+                current_status = df.at[idx, 'Status']
                 new_stat = cs1.selectbox("تحديث الحالة", t[lang]["status_options"], key="stat_update")
                 new_rep = cs2.text_area("الرد الرسمي", value=df.at[idx, 'Reply'], key="rep_update", height=100)
                 
