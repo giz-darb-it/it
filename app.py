@@ -38,7 +38,7 @@ t = {
         "name": "👤 الاسم الكامل",
         "empid": "🆔 الرقم الوظيفي",
         "email": "📧 البريد الإلكتروني",
-        "dept": "🏢 القسم",
+        "dept": "🏢 القسم (كتابة)",
         "type": "⚠️ نوع المشكلة",
         "desc": "📝 وصف المشكلة بالتفصيل",
         "submit": "إرسال الطلب",
@@ -63,7 +63,7 @@ t = {
         "name": "👤 Full Name",
         "empid": "🆔 Employee ID",
         "email": "📧 Email Address",
-        "dept": "🏢 Department",
+        "dept": "🏢 Department (Type here)",
         "type": "⚠️ Issue Type",
         "desc": "📝 Detailed Issue Description",
         "submit": "Submit Request",
@@ -128,8 +128,9 @@ if choice == t[lang]["user_tab"]:
                 empid = st.text_input(t[lang]["empid"])
                 email = st.text_input(t[lang]["email"])
             with col2:
-                dept_options = ["IT", "HR", "Finance", "Admin"] if lang == "English" else ["التقنية", "الموارد البشرية", "المالية", "الإدارة"]
-                dept = st.selectbox(t[lang]["dept"], dept_options)
+                # تم تغيير هذه الخانة من selectbox إلى text_input بناءً على طلبك
+                dept = st.text_input(t[lang]["dept"]) 
+                
                 type_options = ["Hardware", "Software", "Network", "Other"] if lang == "English" else ["أجهزة", "أنظمة", "شبكات", "أخرى"]
                 issue_type = st.selectbox(t[lang]["type"], type_options)
             
@@ -137,7 +138,7 @@ if choice == t[lang]["user_tab"]:
             submit = st.form_submit_button(t[lang]["submit"])
             
             if submit:
-                if name and empid and issue_desc:
+                if name and empid and dept and issue_desc:
                     new_id = len(df) + 1001
                     new_row = {
                         "ID": new_id, "Name": name, "EmpID": empid, "Email": email,
@@ -161,7 +162,6 @@ else:
         admin_pass = st.text_input(t[lang]["pass_field"], type="password")
 
     if admin_user == ADMIN_USER and admin_pass == ADMIN_PASSWORD:
-        # عرض إحصائيات سريعة
         c1, c2, c3 = st.columns(3)
         pending_count = len(df[df['Status'].isin(["New", "جديد", "Pending", "قيد المعالجة"])])
         done_count = len(df[df['Status'].isin(["Resolved", "تم الحل"])])
@@ -172,18 +172,16 @@ else:
 
         st.divider()
         
-        # أداة البحث والتصدير
         col_search, col_export = st.columns([3, 1])
         with col_search:
             search = st.text_input(t[lang]["search"])
         with col_export:
-            st.write(" ") # موازن مسافة
+            st.write(" ") 
             st.download_button("📥 Excel", data=to_excel(df), file_name="tickets.xlsx")
 
         display_df = df[df.apply(lambda row: search.lower() in row.astype(str).str.lower().values, axis=1)] if search else df
         st.dataframe(display_df, use_container_width=True)
 
-        # نظام الرد والمعالجة
         st.markdown("---")
         st.subheader(f"{'Process Ticket' if lang=='English' else 'معالجة الطلبات'}")
         
