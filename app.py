@@ -4,6 +4,11 @@ import os
 from datetime import datetime
 import io
 
+# ==========================================
+# إعداد المهندس / حسن زحيفي
+# نظام الدعم الفني - جميع الحقوق محفوظة
+# ==========================================
+
 # محاولة استيراد مكتبة التحديث التلقائي
 try:
     from streamlit_autorefresh import st_autorefresh
@@ -29,9 +34,8 @@ def to_excel(df):
         df.to_excel(writer, index=False, sheet_name='Sheet1')
     return output.getvalue()
 
-# --- دالة حساب حالة الوقت بالألوان (محدثة لإيقاف العداد عند الحل) ---
+# --- دالة حساب حالة الوقت بالألوان ---
 def get_time_status(date_str, status):
-    # إذا تم الحل، يظهر باللون الأخضر ويتوقف العداد
     if status in ["تم الحل", "Resolved"]:
         return "🟢 Resolved ✅"
     
@@ -41,14 +45,14 @@ def get_time_status(date_str, status):
         total_minutes = int(duration.total_seconds() / 60)
         
         if total_minutes <= 60:
-            return f"🟢 {total_minutes} min" # أخضر (أقل من ساعة)
+            return f"🟢 {total_minutes} min"
         elif 60 < total_minutes <= 180:
             hours = total_minutes // 60
             mins = total_minutes % 60
-            return f"🟡 {hours}h {mins}m" # أصفر (من ساعة لـ 3 ساعات)
+            return f"🟡 {hours}h {mins}m"
         else:
             hours = total_minutes // 60
-            return f"🔴 {hours}h+" # أحمر (أكثر من 3 ساعات)
+            return f"🔴 {hours}h+"
     except:
         return "⚪ N/A"
 
@@ -86,7 +90,8 @@ t = {
         "stats_total": "إجمالي الطلبات", "stats_new": "طلبات جديدة", 
         "stats_proc": "قيد المعالجة", "stats_done": "تم الحل",
         "success_msg": "تم التحديث بنجاح", "error_confirm": "يرجى التأكيد أولاً",
-        "time_col": "⏱️ مدة الطلب"
+        "time_col": "⏱️ مدة الطلب",
+        "copyright": "اعداد المهندس / حسن زحيفي"
     },
     "English": {
         "title": "Technical Support System", "user_tab": "New Ticket", "admin_tab": "Admin Dashboard",
@@ -102,7 +107,8 @@ t = {
         "stats_total": "Total Tickets", "stats_new": "New", 
         "stats_proc": "In Progress", "stats_done": "Resolved",
         "success_msg": "Updated Successfully", "error_confirm": "Please confirm first",
-        "time_col": "⏱️ Ticket Duration"
+        "time_col": "⏱️ Ticket Duration",
+        "copyright": "Prepared by Engr. Hassan Zuhayfi"
     }
 }
 
@@ -117,6 +123,18 @@ st.markdown(f"""
     .stButton>button {{ font-size: 1.2rem !important; font-weight: 800 !important; border-radius: 10px !important; }}
     textarea {{ resize: none !important; }}
     [data-testid="stSidebar"] {{ display: none; }}
+    .footer {{
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        background-color: transparent;
+        color: #888;
+        text-align: center;
+        font-size: 14px;
+        padding: 10px;
+        font-weight: bold;
+    }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -160,7 +178,6 @@ with tab_admin:
     if st.session_state.logged_in:
         st.markdown(f"### {t[lang]['admin_tab']}")
         
-        # --- الداش بورد (Dashboard) ---
         stats = {
             "total": len(df),
             "new": len(df[df['Status'].isin(["جديد", "New"])]),
@@ -174,23 +191,18 @@ with tab_admin:
         m4.metric(t[lang]["stats_done"], stats["done"])
         st.divider()
         
-        # البحث وتصدير إكسل
         c_search, c_excel = st.columns([4, 1])
         search = c_search.text_input(t[lang]["search"])
         c_excel.write("##")
         c_excel.download_button("📤 Excel", data=to_excel(df), file_name="tickets.xlsx", use_container_width=True)
         
-        # إضافة عمود مدة الطلب الملون قبل العرض
         df_display = df.copy()
         if not df_display.empty:
-            # تمرير التاريخ والحالة للدالة للتحقق من الحل
             df_display[t[lang]["time_col"]] = df_display.apply(lambda x: get_time_status(x['Date'], x['Status']), axis=1)
             
-            # فلترة البحث
             if search:
                 df_display = df_display[df_display.apply(lambda row: search.lower() in row.astype(str).str.lower().values, axis=1)]
             
-            # إعادة ترتيب الأعمدة لوضع "مدة الطلب" في مكان بارز
             cols = [t[lang]["time_col"]] + [c for c in df_display.columns if c != t[lang]["time_col"]]
             st.dataframe(df_display[cols], use_container_width=True, hide_index=True)
         else:
@@ -198,7 +210,6 @@ with tab_admin:
 
         st.markdown("---")
         
-        # معالجة الطلب والحذف
         all_ids = df['ID'].tolist()
         if all_ids:
             col_manage, col_delete = st.columns([2, 1])
@@ -234,3 +245,6 @@ with tab_admin:
                         save_data(df); st.rerun()
                     else:
                         st.error(t[lang]["error_confirm"])
+
+# --- إضافة الحقوق في أسفل البرنامج ---
+st.markdown(f'<div class="footer">{t[lang]["copyright"]}</div>', unsafe_allow_html=True)
