@@ -91,7 +91,7 @@ t = {
         "stats_proc": "قيد المعالجة", "stats_done": "تم الحل",
         "success_msg": "تم التحديث بنجاح", "error_confirm": "يرجى التأكيد أولاً",
         "time_col": "⏱️ مدة الطلب",
-        "copyright": "اعداد المهندس / حسن زحيفي"
+        "copyright": "إعداد المهندس / حسن زحيفي"
     },
     "English": {
         "title": "Technical Support System", "user_tab": "New Ticket", "admin_tab": "Admin Dashboard",
@@ -221,13 +221,21 @@ with tab_admin:
                 st.info(f"**{t[lang]['desc']}:** {df.at[idx, 'IssueDesc']}")
                 
                 cs1, cs2 = st.columns(2)
+                # استخدام index=0 للبدء من جديد دائماً
                 new_stat = cs1.selectbox(t[lang]["stat_label"], t[lang]["status_options"], key="stat_update")
                 new_rep = cs2.text_area(t[lang]["reply_label"], value=df.at[idx, 'Reply'], key="rep_update", height=100)
                 
                 if st.button(t[lang]["update_btn"], use_container_width=True):
                     df.at[idx, 'Status'] = new_stat
                     df.at[idx, 'Reply'] = new_rep
-                    save_data(df); st.success(t[lang]["success_msg"]); st.rerun()
+                    save_data(df)
+                    
+                    # --- تصفير الخانات برمجياً ---
+                    if "stat_update" in st.session_state: del st.session_state["stat_update"]
+                    if "rep_update" in st.session_state: del st.session_state["rep_update"]
+                    
+                    st.success(t[lang]["success_msg"])
+                    st.rerun()
 
             with col_delete:
                 st.subheader(t[lang]["del_section"])
@@ -246,5 +254,5 @@ with tab_admin:
                     else:
                         st.error(t[lang]["error_confirm"])
 
-# --- إضافة الحقوق في أسفل البرنامج ---
+# --- الحقوق في أسفل البرنامج ---
 st.markdown(f'<div class="footer">{t[lang]["copyright"]}</div>', unsafe_allow_html=True)
